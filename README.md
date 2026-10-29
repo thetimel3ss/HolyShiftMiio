@@ -24,8 +24,8 @@ their positions. `clawadds` is preserved for compatibility but its checkbox is
 disabled: it has no effect in the upstream rotation.
 
 This phase preserves qrospars master's rotation. Future rotation work and in-game
-acceptance steps are in [ROADMAP.md](ROADMAP.md). Provenance and related branches
-are in [docs/AUTHORS.md](docs/AUTHORS.md).
+acceptance steps are in [ROADMAP.md](ROADMAP.md). Author research and regression
+tests are maintained locally and are not included in this repository.
 
 ## What It Does
 
@@ -142,16 +142,10 @@ Enable `/hsdps debug on`, perform a test, then `/reload` or log out to save.
 `/hsdps debug ui`; `/hsdps debug show 50` prints the last 50 entries to chat.
 No export or auto-sync scripts are bundled with this repository.
 
-Run the regression checks from this directory using a Lua 5.0 interpreter:
-
-```sh
-lua tests/base.lua
-luac -p HolyShift_Settings.lua HolyShiftCore.lua HolyShift_UI.lua Localization.lua
-```
-
-The tests use mocked frame/unit APIs to verify loading, migration, synchronized
-controls and commands, equipment saving, positions and persistent debug. They do
-not validate rendering, server spell behavior, or DPS; those require the game.
+Local regression checks were run using Lua 5.0.3 with mocked frame/unit APIs.
+They cover loading, migration, synchronized controls and commands, equipment
+saving, positions and persistent debug. Research and test files remain local.
+Rendering, server spell behavior and DPS require in-game validation.
 
 ## Upstream
 

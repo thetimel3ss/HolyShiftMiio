@@ -13,6 +13,6 @@
   and saved/restored positions for both dialogs.
 - Mark the upstream no-op clawadds control as legacy and disable its checkbox.
 - Register druid combat events using the locale-independent class token.
-- Add Lua 5.0 regression checks and an evidence-linked authors/provenance report.
+- Validate with local Lua 5.0 regression checks and record author research locally.
 - Preserve the upstream combat, rotation and utility functions; rotation changes
   belong to the next phase.

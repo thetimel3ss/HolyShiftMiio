@@ -1,3 +1,7 @@
 debug-log-export.ps1
 dev-autosync.ps1
 logs/HolyShift-debug.txt
+
+# Local research and validation only
+/docs/
+/tests/
