@@ -1,5 +1,7 @@
 # Roadmap
 
+New addon files require prior user authorization. Research and tests stay local.
+
 ## Phase 1 — base and interface
 
 Implemented on feature/base-ui:

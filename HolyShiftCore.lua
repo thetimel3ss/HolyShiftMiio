@@ -12,6 +12,7 @@ local hsManaLibChecked = false
 local hsManaLibFallbackNotice = false
 local hsSpellKnownCache = {}
 local hsSpellIndexCache = {}
+local hsMissingSpellNotices = {}
 local hsReshiftChecked = false
 local hsHasReshift = false
 local hsLastShiftAttempt = 0
@@ -154,6 +155,7 @@ function HolyShift_SlashCommand(msg)
 end
 function HolyShift_OnEvent(event)
     if event == "SPELLS_CHANGED" then
+        hsMissingSpellNotices = {}
         hsSpellKnownCache = {}
         hsSpellIndexCache = {}
         hsReshiftChecked = false
@@ -447,14 +449,23 @@ end
 function EShift()
     local a,c=GetActiveForm()
     if(a==0) then
+        if not c then HSWarnMissingSpell("Cat Form"); return end
         CastShapeshiftForm(c)
     elseif(not IsSpellOnCD('Cat Form')) then
         CastShapeshiftForm(a)
         ToggleAutoAttack("off")
     end
 end
+function HSWarnMissingSpell(spellName)
+    if hsMissingSpellNotices[spellName] then return end
+    hsMissingSpellNotices[spellName] = true
+    HSPrint("HolyShift: spell not learned: "..tostring(spellName)..". Skipping it; existing fallbacks remain available.")
+    HSDebugTrace("SPELL_NOT_LEARNED", tostring(spellName))
+end
 function HSHasSpell(spellName)
-    return HSGetSpellIndex(spellName) ~= nil
+    if HSGetSpellIndex(spellName) then return true end
+    HSWarnMissingSpell(spellName)
+    return false
 end
 function HSGetSpellIndex(spellName)
     if hsSpellIndexCache[spellName] ~= nil then
@@ -471,17 +482,44 @@ function HSGetSpellIndex(spellName)
             end
         end
     end
+    local found
     for index = 1, last do
         -- Some vanilla clients throw instead of returning nil past the book.
         local ok, name = pcall(GetSpellName, index, "spell")
         if not ok or name == nil then break end
         if name == spellName then
-            hsSpellIndexCache[spellName] = index
-            return index
+            found = index
         end
     end
-    hsSpellIndexCache[spellName] = -1
-    return nil
+    hsSpellIndexCache[spellName] = found or -1
+    return found
+end
+-- All action-bar usability checks can fall back to a learned spell. The game
+-- still validates energy, cooldown, range and position when the cast is sent.
+function HSCanUseSpell(spellName, texture)
+    local index = HSGetSpellIndex(spellName)
+    if not index then HSWarnMissingSpell(spellName); return false end
+    local slot = texture and FindActionSlot(texture) or 0
+    if slot > 0 then return IsUse(slot) == 1 end
+    if type(IsUsableSpell) == "function" then
+        local usable = IsUsableSpell(spellName)
+        return usable == true or usable == 1
+    end
+    return true
+end
+function HSCastSpell(spellName, onSelf)
+    local name = string.gsub(spellName, "%s*%(Rank%s+%d+%)$", "")
+    local index = HSGetSpellIndex(name)
+    if not index then HSWarnMissingSpell(name); return false end
+    local texture = type(GetSpellTexture) == "function" and GetSpellTexture(index, "spell") or nil
+    local slot = texture and FindActionSlot(texture) or 0
+    if slot > 0 then
+        CastSpellByName(name, onSelf)
+    else
+        HSDebugTrace("SPELLBOOK_FALLBACK", name)
+        CastSpell(index, "spell", onSelf)
+    end
+    return true
 end
 function HSIsSpellReady(spellName)
 	local spellIndex = HSGetSpellIndex(spellName)
@@ -545,6 +583,7 @@ end
 function QuickShift()
     local a,c=GetActiveForm()
     if(a==0) then
+        if not c then HSWarnMissingSpell("Cat Form"); return end
         CastShapeshiftForm(c)
     else
         CastShapeshiftForm(a)
@@ -578,10 +617,10 @@ function HolyShiftAddon()
 	if UnitPowerType("Player") == 3 then
 		if stealthed == true then
 			if HSBuffChk('Ability_Mount_JungleTiger') == false then
-				CastSpellByName("Tiger's Fury(Rank 4)")
+				HSCastSpell("Tiger's Fury(Rank 4)")
 			end
 			if CheckInteractDistance('target',3) == 1 then
-				CastSpellByName("Ravage")
+				HSCastSpell("Ravage")
 			end
 		else
 			if tot == playername then
@@ -589,7 +628,7 @@ function HolyShiftAddon()
 					if lipcd == 0 and lipslot ~= 0 then
 						EShift()
 					elseif(not IsSpellOnCD("Cower")) then
-						CastSpellByName("Cower")
+						HSCastSpell("Cower")
 					elseif(not IsSpellOnCD("Barkskin")) then
 						EShift()
 					else
@@ -598,7 +637,7 @@ function HolyShiftAddon()
 				else --Else if target is not a boss
 					if partynum > 2 then
 						if(not IsSpellOnCD("Cower")) and HSCowerUse == 1 then
-							CastSpellByName("Cower")
+							HSCastSpell("Cower")
 						else
 							Atk("Auto",stealthed,romactive,romcooldown)
 						end
@@ -620,7 +659,7 @@ function HolyShiftAddon()
 					if lipcd == 0 and lipslot ~= 0 then
 						UseItemByName("Limited Invulnerability Potion")
 					elseif(not IsSpellOnCD("Barkskin")) then
-						CastSpellByName("Barkskin")
+						HSCastSpell("Barkskin")
 					end
 				end
 			else
@@ -699,12 +738,12 @@ function Atk(CorS,stealthyn,romyn,romcd)
 		builderCost = shredCost
 	end
 	builderSlot = FindActionSlot(builderTexture)
-	if builderSpell == "Shred" and builderSlot == 0 then
+	if builderSpell == "Shred" and not HSCanUseSpell("Shred", shredtext) then
 		builderSpell = "Claw"
 		builderTexture = clawtext
 		builderCost = clawCost
 		builderSlot = FindActionSlot(builderTexture)
-		HSDebugTrace("BUILDER_FALLBACK", "Shred slot missing; fallback to Claw")
+		HSDebugTrace("BUILDER_FALLBACK", "Shred unavailable in bar/book; fallback to Claw")
 	end
 	HSDebugTrace("ATK_THRESHOLDS", "CorS="..tostring(CorS).." builder="..builderSpell.." bcost="..tostring(builderCost).." fbthresh="..tostring(fbthresh).." shth="..tostring(shth))
 	if UnitIsDead('target') then
@@ -722,7 +761,7 @@ function Atk(CorS,stealthyn,romyn,romcd)
 	and comboPoints < 4
 	and (CheckInteractDistance('target',3) == 1 or MobTooFar() == true) then
 		HSDebugTrace("CAST", "Tiger's Fury")
-		CastSpellByName("Tiger's Fury(Rank 4)")
+		HSCastSpell("Tiger's Fury(Rank 4)")
 		return
 	end
 
@@ -732,11 +771,11 @@ function Atk(CorS,stealthyn,romyn,romcd)
 	and comboPoints < fbthresh
 	and canRake
 	and IsTDebuff('target', 'Ability_Druid_Disembowel') == false
-	and IsUse(FindActionSlot("Ability_Druid_Rake")) == 1
+	and HSCanUseSpell("Rake", "Ability_Druid_Disembowel")
 	and (not IsSpellOnCD("Rake"))
 	and (HSBuffChk("Spell_Shadow_ManaBurn") == true or UnitMana('Player') >= rakeCost) then
 		HSDebugTrace("CAST", "Rake (missing)")
-		CastSpellByName("Rake")
+		HSCastSpell("Rake")
 		return
 	end
 
@@ -750,7 +789,7 @@ function Atk(CorS,stealthyn,romyn,romcd)
 	and (not IsSpellOnCD("Faerie Fire (Feral)"))
 	and comboPoints <= HS_FF_REFRESH_MAX_CP then
 		HSDebugTrace("CAST", "Faerie Fire (missing close)")
-		CastSpellByName("Faerie Fire (Feral)(Rank 4)")
+		HSCastSpell("Faerie Fire (Feral)(Rank 4)")
 		return
 	end
 
@@ -762,13 +801,13 @@ function Atk(CorS,stealthyn,romyn,romcd)
 		and stealthyn == false
 		and (not IsSpellOnCD("Faerie Fire (Feral)")) then
 			HSDebugTrace("CAST", "Faerie Fire (out of range)")
-			CastSpellByName("Faerie Fire (Feral)(Rank 4)")
+			HSCastSpell("Faerie Fire (Feral)(Rank 4)")
 		end
 	end
 	if(comboPoints<fbthresh) then
 		HSDebugTrace("BUILDER_PHASE", "comboPoints<fbthresh")
 		if UnitMana('Player')>=builderCost or HSBuffChk("Spell_Shadow_ManaBurn") == true then
-			if builderSlot ~= 0 and IsUse(builderSlot) == 1 then
+			if HSCanUseSpell(builderSpell, builderTexture) then
 				if not IsSpellOnCD(builderSpell) then
 					if builderSpell == "Shred" and BehindTarget() ~= true then
 						HSDebugTrace("BUILDER_GUARD", "Shred blocked by behind check; fallback to Claw")
@@ -777,7 +816,7 @@ function Atk(CorS,stealthyn,romyn,romcd)
 						builderCost = clawCost
 						builderSlot = FindActionSlot(builderTexture)
 					end
-					if builderSlot == 0 or IsUse(builderSlot) ~= 1 then
+					if not HSCanUseSpell(builderSpell, builderTexture) then
 						HSDebugTrace("BUILDER_UNAVAILABLE", builderSpell.." fallback unusable")
 						return
 					end
@@ -786,7 +825,7 @@ function Atk(CorS,stealthyn,romyn,romcd)
 					else
 						HSDebugTrace("CAST", builderSpell.." (builder)")
 					end
-					CastSpellByName(builderSpell)
+					HSCastSpell(builderSpell)
 					--HSPrint(doclaw)
 				end
 			elseif builderSlot == 0 then
@@ -802,14 +841,14 @@ function Atk(CorS,stealthyn,romyn,romcd)
 				end
 				if comboPoints <= HS_FF_REFRESH_MAX_CP and IsTDebuff('target', 'Spell_Nature_FaerieFire') == false and stealthyn == false and (not IsSpellOnCD("Faerie Fire (Feral)")) and HSAutoFF == 1 and canFF then
 					HSDebugTrace("CAST", "Faerie Fire (energy gap)")
-					CastSpellByName("Faerie Fire (Feral)(Rank 4)")
+					HSCastSpell("Faerie Fire (Feral)(Rank 4)")
 				end
 			end
 		end
 	else
 		HSDebugTrace("FINISHER_PHASE", "comboPoints>=fbthresh")
 		local finisherEnergy = shth
-		local shouldRip = comboPoints == 5 and HasRip() == false and canRip
+		local shouldRip = comboPoints == 5 and HasRip() == false and canRip and HSHasSpell("Rip")
 		if shouldRip then
 			finisherEnergy = 30
 		end
@@ -821,17 +860,17 @@ function Atk(CorS,stealthyn,romyn,romcd)
 					else
 						HSDebugTrace("CAST", "Rip (opener @5cp)")
 					end
-					CastSpellByName("Rip")
+					HSCastSpell("Rip")
 				end
 			else
-				if IsUse(FindActionSlot("Ability_Druid_FerociousBite")) == 1 then
+				if HSCanUseSpell("Ferocious Bite", "Ability_Druid_FerociousBite") then
 					if not IsSpellOnCD("Ferocious Bite") then
 						if HSBuffChk("Spell_Shadow_ManaBurn") == true then
 							HSDebugTrace("CAST", "Ferocious Bite (clearcasting)")
 						else
 							HSDebugTrace("CAST", "Ferocious Bite")
 						end
-						CastSpellByName("Ferocious Bite")
+						HSCastSpell("Ferocious Bite")
 					end
 				end
 			end
@@ -845,7 +884,7 @@ function Atk(CorS,stealthyn,romyn,romcd)
 				end
 				if comboPoints <= HS_FF_REFRESH_MAX_CP and IsTDebuff('target', 'Spell_Nature_FaerieFire') == false and stealthyn == false and (not IsSpellOnCD("Faerie Fire (Feral)")) and HSAutoFF == 1 and canFF then
 					HSDebugTrace("CAST", "Faerie Fire (finisher energy gap)")
-					CastSpellByName("Faerie Fire (Feral)(Rank 4)")
+					HSCastSpell("Faerie Fire (Feral)(Rank 4)")
 				end
 			end
 		end
@@ -923,7 +962,7 @@ function Restore(rom,romyn,romcd)
 	if UnitHealth('target') > hthresh then
 		if UnitMana('Player')<resto then
 			if(not IsSpellOnCD("Innervate")) and HSInnervateUse == 1 then
-				CastSpellByName("Innervate",1)
+				HSCastSpell("Innervate",1)
 			elseif ((HSBuffChk("Spell_Nature_Lightning") == false and nervcd < 340) or UnitMana('Player') < 478) and romyn == false then
 				if rom ~= -1 and romcd == 0 then
 					if CheckInteractDistance('target',3) == 1 or MobTooFar() == true then
@@ -961,7 +1000,7 @@ function ItemInfo(iname)
 	local ContainerSlot = nil
 	for slot = 0, 19 do --Check player paper doll slots.
 		if GetInventoryItemLink('player',slot) ~= nil then
-			if string.find(GetInventoryItemLink('player',slot),iname) then
+			if HolyShiftItemMatches(GetInventoryItemLink('player',slot),iname) then
 				ItemEquip = slot
 				break
 			end
@@ -972,7 +1011,7 @@ function ItemInfo(iname)
 			for slot = 1, GetContainerNumSlots(bag), 1 do
 				local name = GetContainerItemLink(bag,slot)
 				if name then
-					if string.find(name,iname) then
+					if HolyShiftItemMatches(name,iname) then
 						ContainerBag = bag
 						ContainerSlot = slot
 						break
@@ -1012,7 +1051,7 @@ function GetSpellID(sn)
 end
 function IsSpellOnCD(sn)
     local index = GetSpellID(sn)
-    if not index then return true end -- unlearned spells are unavailable
+    if not index then HSWarnMissingSpell(sn); return true end -- unavailable
     local start, duration = GetSpellCooldown(index, "spell")
     if type(start) ~= "number" or type(duration) ~= "number" then return true end
     return start + duration - GetTime() >= 0.1
@@ -1057,20 +1096,16 @@ function IsUse(abil)
 	return isUsable
 end
 function PopSkeleton()
-	local ohloc = GetInventoryItemLink("player", 17)
-	local ohcd,oheq,ohbag,ohslot = ItemInfo(HSOffhand)
-	local offhand = 'Ancient Cornerstone Grimoire'
-	if ohloc ~= nil then
-		if(string.find(ohloc, offhand)) then
-			local acgcdr,acgeq,acgbag,acgslot = ItemInfo(offhand)
-			if acgcdr == 0 and (CheckInteractDistance('target',3) == 1 or MobTooFar() == true) then
-				UseItemByName('Ancient Cornerstone Grimoire')
-			elseif acgcdr > 30 and HSOffhand ~= 'Ancient Cornerstone Grimoire' then
-				PickupInventoryItem('17')
-				PickupContainerItem(ohbag,ohslot)
-			end
-		end
-	end
+    local current = GetInventoryItemLink("player", 17)
+    local grimoire = "Ancient Cornerstone Grimoire"
+    if HolyShiftItemMatches(current, grimoire) then
+        local cooldown = ItemInfo(grimoire)
+        if cooldown == 0 and (CheckInteractDistance('target',3) == 1 or MobTooFar() == true) then
+            UseInventoryItem(17)
+        elseif cooldown > 30 and not HolyShiftItemMatches(current, HSOffhand) then
+            HolyShiftEquipItem(HSOffhand, 17)
+        end
+    end
 end
 function Pummel()
 	local tloc = GetInventoryItemLink("player", 16)
@@ -1090,20 +1125,15 @@ function Pummel()
 		end
 	end
 end
-function SwapOutMCP(weapon,offhand)
-	local weploc = GetInventoryItemLink("player", 16)
-	local wep = 'Manual Crowd Pummeler'
-	local wepcd,wepeq,wepbag,wepslot = ItemInfo(weapon)
-	local tokcd,tokeq,tokbag,tokslot = ItemInfo(offhand)
-	if weploc ~= nil and weapon ~= "none" and weapon ~= "None" then
-		if(string.find(weploc, wep)) then
-			PickupInventoryItem('16')
-			PickupContainerItem(wepbag,wepslot)
-		end
-	end
-	if offhand ~= "none" and offhand ~= "None" and weapon ~= "none" and weapon ~= "None" then
-		UseItemByName(offhand)
-	end
+function SwapOutMCP(weapon, offhand)
+    local current = GetInventoryItemLink("player", 16)
+    if not weapon or weapon == "None" or weapon == "none" then return end
+    if HolyShiftItemMatches(current, "Manual Crowd Pummeler") then
+        if not HolyShiftEquipItem(weapon, 16) then return end
+    end
+    if offhand and offhand ~= "None" and offhand ~= "none" then
+        HolyShiftEquipItem(offhand, 17)
+    end
 end
 function BrzRmv()
 	local debuff = "Bronze"

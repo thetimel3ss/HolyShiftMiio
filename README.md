@@ -20,12 +20,23 @@ The old table remains an import source, not the active configuration. Debug logs
 are also saved per character. Fresh installations keep upstream defaults: all
 optional toggles off.
 
-Weapon/offhand fields accept the item name as shown in your client, or `None`;
-press Enter or Save equipment. Numeric item IDs are not supported by the current
-lookup. Weapon is the replacement after MCP runs out of charges; Offhand is the
-companion offhand and the return item after Ancient Cornerstone Grimoire use.
-Items must be available in your bags. These fields do not select rotation weapons
-or equip a set every time the combat macro is pressed.
+Weapon/offhand fields accept a full item name, a positive numeric item ID, an
+`item:ID` reference, or a Shift-clicked item link. Use Bags to select matching
+equipment from your inventory. Press Enter or Save equipment for typed values;
+selecting a bag item saves it immediately. The preview shows the cached item name
+and icon; an uncached ID displays as ID plus its number until data is available.
+Names are converted to IDs when resolvable. `None` disables that equipment slot.
+
+Weapon is the replacement after MCP runs out of charges; Offhand is the companion
+offhand and the return item after Ancient Cornerstone Grimoire use. Items must be
+in your bags when needed. Selection does not equip them immediately. IDs identify
+an item type, not a specific enchanted copy. The client still enforces equipment
+restrictions, including incompatible two-handed weapon/offhand combinations.
+
+Hover controls and option labels for explanations, including limits inherited
+from upstream (the boss Cower branch and stealth Tiger's Fury can act independently
+of their optional normal-combat toggles).
+
 Use View log or `/hsdps debug ui` for the debug window. Both windows remember
 their positions. `clawadds` is preserved for compatibility but its checkbox is
 disabled: it has no effect in the upstream rotation.
@@ -106,6 +117,19 @@ Debug:
   - Shred when behind and energy is high enough
   - Claw otherwise
 - "Must be behind" errors trigger a short lockout before trying behind-only behavior again
+
+## Missing action-bar spells
+
+For rotation abilities, the addon keeps the action-bar usability check when a slot
+exists. Without a slot, it checks the spellbook and sends the highest learned rank
+by its book index. This covers builders, Rake, finishers and the common spell cast
+adapter. The game still decides range, position, resources, and cast restrictions.
+Unlearned abilities are skipped with one chat warning per spell per session;
+learning spells resets the cache and warnings. Debug mode records book fallbacks.
+Existing alternatives remain: unavailable/position-blocked Shred can use Claw;
+missing/unready Reshift retains Cat Form shifting. Unlearned Rip can use the
+learned Bite finisher. Auto Attack still needs a non-shifting action-bar slot for
+the original auto-attack state checks; it is not handled as a normal damage spell.
 
 ## Powershifting and Reshift
 

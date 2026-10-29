@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.17.5-dev — item selection, tooltips and spellbook fallback
+
+- Accept item IDs, links and names for replacement equipment; resolve names to
+  IDs when possible and display item names/icons.
+- Add a paged bag picker with slot filtering and Shift-click insertion while an
+  equipment field has focus. Preserve previous chat/bag/equipment handlers.
+- Match item IDs exactly and equip from bags into the intended slot without
+  disturbing a user-held cursor item. IDs select a type, not an enchanted copy.
+- Add tooltips to options, fields, picker rows, navigation and menu buttons.
+- Add a general spellbook fallback for missing action-bar abilities and select
+  the highest learned rank. Warn once for unlearned spells; reset after training.
+- Keep existing Shred/Claw, Reshift/Cat Form and positional alternatives.
+- Continue using only existing addon files; new files require user authorization.
+
 ## 1.17.5-dev — in-game validation fixes
 
 - Save settings and debug logs per character, importing the previous global
