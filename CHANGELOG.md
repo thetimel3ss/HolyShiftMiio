@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.17.5-dev — in-game validation fixes
+
+- Save settings and debug logs per character, importing the previous global
+  preferences once without sharing the old table.
+- Give weapon and offhand edit boxes unique names so their InputBoxTemplate
+  textures do not collide.
+- Bound spellbook lookups, treat unlearned spells as unavailable, and invalidate
+  caches after spell training. Guard missing action slots before IsUsableAction.
+- Do not query Innervate cooldown unless it is learned.
+- Document the equipment fields' purpose and current name-only lookup.
+
 ## 1.17.5-dev — base and UI
 
 - Fork qrospars master at 9cb6082; integrate Timeless's settings/log window from

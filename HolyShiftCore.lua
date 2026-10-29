@@ -86,6 +86,7 @@ function HolyShift_OnLoad()
     this:RegisterEvent("VARIABLES_LOADED")
     local _, class = UnitClass("player")
     if class == "DRUID" then
+        this:RegisterEvent("SPELLS_CHANGED")
         this:RegisterEvent("PLAYER_ENTERING_WORLD")
         this:RegisterEvent("PLAYER_REGEN_ENABLED")
 		this:RegisterEvent("PLAYER_REGEN_DISABLED")
@@ -119,7 +120,7 @@ function HolyShift_SlashCommand(msg)
         HolyShiftToggleUI()
     elseif command == "weapon" or command == "offhand" then
         HolyShiftSetEquipment(command, option)
-        HSPrint("HolyShift: "..command.." = "..HolyShiftDB[command])
+        HSPrint("HolyShift: "..command.." = "..HolyShiftCharacterDB[command])
     elseif command == "debug" then
         local _, _, sub, value = string.find(option, "^([^%s]+)%s*(.*)$")
         sub = string.lower(sub or "status")
@@ -138,7 +139,7 @@ function HolyShift_SlashCommand(msg)
     elseif HolyShiftOptionByKey[command] then
         if option == "on" or option == "off" then
             HolyShiftSetOption(command, option == "on")
-            HSPrint("HolyShift: "..command.." = "..HolyShiftDB[command])
+            HSPrint("HolyShift: "..command.." = "..HolyShiftCharacterDB[command])
         else
             HSPrint("HolyShift: /hsdps "..command.." on|off")
         end
@@ -147,11 +148,17 @@ function HolyShift_SlashCommand(msg)
         HSPrint("/hsdps weapon <name|none>; /hsdps offhand <name|none>; /hsdps debug on|off|show 50|clear|ui")
         for _, entry in ipairs(HolyShiftOptions) do
             local suffix = entry.legacy and " (legacy: no effect in upstream rotation)" or ""
-            HSPrint(entry.key.." = "..HolyShiftDB[entry.key]..suffix)
+            HSPrint(entry.key.." = "..HolyShiftCharacterDB[entry.key]..suffix)
         end
     end
 end
 function HolyShift_OnEvent(event)
+    if event == "SPELLS_CHANGED" then
+        hsSpellKnownCache = {}
+        hsSpellIndexCache = {}
+        hsReshiftChecked = false
+        hsHasReshift = false
+    end
 	if event == "PLAYER_ENTERING_WORLD" then
 	end
 	if event == "PLAYER_TARGET_CHANGED" then
@@ -447,41 +454,34 @@ function EShift()
     end
 end
 function HSHasSpell(spellName)
-	if hsSpellKnownCache[spellName] ~= nil then
-		return hsSpellKnownCache[spellName] == 1
-	end
-	for i = 1, 400 do
-		local name = GetSpellName(i, "spell")
-		if name == nil then
-			break
-		end
-		if name == spellName then
-			hsSpellKnownCache[spellName] = 1
-			return true
-		end
-	end
-	hsSpellKnownCache[spellName] = 0
-	return false
+    return HSGetSpellIndex(spellName) ~= nil
 end
 function HSGetSpellIndex(spellName)
-	if hsSpellIndexCache[spellName] ~= nil then
-		if hsSpellIndexCache[spellName] > 0 then
-			return hsSpellIndexCache[spellName]
-		end
-		return nil
-	end
-	for i = 1, 400 do
-		local name = GetSpellName(i, "spell")
-		if name == nil then
-			break
-		end
-		if name == spellName then
-			hsSpellIndexCache[spellName] = i
-			return i
-		end
-	end
-	hsSpellIndexCache[spellName] = -1
-	return nil
+    if hsSpellIndexCache[spellName] ~= nil then
+        if hsSpellIndexCache[spellName] > 0 then return hsSpellIndexCache[spellName] end
+        return nil
+    end
+    local last = 400
+    if type(GetNumSpellTabs) == "function" and type(GetSpellTabInfo) == "function" then
+        last = 0
+        for tab = 1, GetNumSpellTabs() do
+            local _, _, offset, count = GetSpellTabInfo(tab)
+            if type(offset) == "number" and type(count) == "number" then
+                last = math.max(last, offset + count)
+            end
+        end
+    end
+    for index = 1, last do
+        -- Some vanilla clients throw instead of returning nil past the book.
+        local ok, name = pcall(GetSpellName, index, "spell")
+        if not ok or name == nil then break end
+        if name == spellName then
+            hsSpellIndexCache[spellName] = index
+            return index
+        end
+    end
+    hsSpellIndexCache[spellName] = -1
+    return nil
 end
 function HSIsSpellReady(spellName)
 	local spellIndex = HSGetSpellIndex(spellName)
@@ -870,8 +870,6 @@ function CanShift()
 	local mpcd,_,mpbag,mpslot = ItemInfo('Major Mana Potion')
 	local smcd,_,smbag,smslot = ItemInfo('Superior Mana Potion')
 	local drcd,_,drbag,drslot = ItemInfo('Demonic Rune')
-	local nervst, nervdur,_ = GetSpellCooldown(GetSpellID('Innervate'), "spell")
-	local nervcd = nervdur - (GetTime() - nervst)
 	local romcooldown,romeq,rombag,romslot = ItemInfo('Rune of Metamorphosis')
 	local romactive = HSBuffChk("INV_Misc_Rune")
 	if HSShiftUse ~= 1 then
@@ -907,8 +905,12 @@ function Restore(rom,romyn,romcd)
 	local smcd,_,smbag,smslot = ItemInfo('Superior Mana Potion')
 	local drcd,_,drbag,drslot = ItemInfo('Demonic Rune')
 	local hscd,_,hsbag,hsslot = ItemInfo('Major Healthstone')
-	local nervst, nervdur,_ = GetSpellCooldown(GetSpellID('Innervate'), "spell")
-	local nervcd = nervdur - (GetTime() - nervst)
+    local nervcd = math.huge
+    local innervateIndex = GetSpellID("Innervate")
+    if innervateIndex then
+        local start, duration = GetSpellCooldown(innervateIndex, "spell")
+        nervcd = duration - (GetTime() - start)
+    end
 	local mpot = mpslot + smslot
 	local curhp = Num_Round((UnitHealth('player')/UnitHealthMax('player')),2)
 	if curhp < 0.4 and hsslot ~= 0 and hscd == 0 then
@@ -1005,19 +1007,15 @@ function HSBuffChk(texture)
 	return isBuffActive
 end
 function GetSpellID(sn)
-	local i,a
-		i=0
-	while a~=sn do
-		i=i+1
-		a=GetSpellName(i,"spell")
-	end
-	return i
+    -- Legacy name: this returns a spellBOOK index, not a server spell ID.
+    return HSGetSpellIndex(sn)
 end
 function IsSpellOnCD(sn)
-    local gameTime = GetTime()
-    local start,duration,_ = GetSpellCooldown(GetSpellID(sn), "spell")
-    local cdT = start + duration - gameTime
-    return (cdT >= 0.1)
+    local index = GetSpellID(sn)
+    if not index then return true end -- unlearned spells are unavailable
+    local start, duration = GetSpellCooldown(index, "spell")
+    if type(start) ~= "number" or type(duration) ~= "number" then return true end
+    return start + duration - GetTime() >= 0.1
 end
 function GetActiveForm()
     local _, formName, active = nil
@@ -1051,7 +1049,8 @@ function FindActionSlot(spellTexture)
 	return 0
 end
 function IsUse(abil)
-	isUsable, notEnoughMana = IsUsableAction(abil)
+    if type(abil) ~= "number" or abil < 1 or abil > 120 then return 0 end
+	local isUsable, notEnoughMana = IsUsableAction(abil)
 	if isUsable == nil then
 		isUsable = 0
 	end

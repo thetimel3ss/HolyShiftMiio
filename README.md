@@ -13,12 +13,19 @@ The configuration and log windows are adapted from Timeless's private
 `holyshift-enhanced` UI. Open settings with `/holyshift`, `/hs`, `/hsdps ui`,
 or `/hsdps config`. The combat macro remains `/hsdps dps`.
 
-Checkboxes and the original commands share the same settings. Existing
-`HolyShiftDB` values take precedence; otherwise the old standalone variables are
-migrated. Fresh installations keep upstream defaults: all optional toggles off.
-The original SavedVariables remain declared for migration and debug export.
+Checkboxes and the original commands share per-character settings in
+`HolyShiftCharacterDB`. Existing account-wide `HolyShiftDB` preferences are copied
+once on each character's first login after upgrading; later changes are independent.
+The old table remains an import source, not the active configuration. Debug logs
+are also saved per character. Fresh installations keep upstream defaults: all
+optional toggles off.
 
-Weapon/offhand fields accept an item name or `None`; press Enter or Save equipment.
+Weapon/offhand fields accept the item name as shown in your client, or `None`;
+press Enter or Save equipment. Numeric item IDs are not supported by the current
+lookup. Weapon is the replacement after MCP runs out of charges; Offhand is the
+companion offhand and the return item after Ancient Cornerstone Grimoire use.
+Items must be available in your bags. These fields do not select rotation weapons
+or equip a set every time the combat macro is pressed.
 Use View log or `/hsdps debug ui` for the debug window. Both windows remember
 their positions. `clawadds` is preserved for compatibility but its checkbox is
 disabled: it has no effect in the upstream rotation.

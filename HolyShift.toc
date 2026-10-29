@@ -6,6 +6,7 @@
 ## Title: HolyShift
 ## Notes: Max cat dps
 ## Author: Miioon (maintainer), Maulbatross K3 (original author), Timeless (fork/UI)
-## SavedVariables: HolyShiftDB,HSInnervateUse,HSMCPUse,HSMPUse,HSDRUse,HSFLUse,HSClawAdd,HSTigerUse,HSShiftUse,HSCowerUse,HSWeapon,HSOffhand,HSDeathrate,HSAutoFF,HSDebugEnabled,HSDebugLog
+## SavedVariables: HolyShiftDB
+## SavedVariablesPerCharacter: HolyShiftCharacterDB,HSDebugLog
 ## DefaultState: enabled
 HolyShift.xml

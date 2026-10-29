@@ -1,5 +1,5 @@
 -- Configuration shared by the original commands and Timeless's configuration UI.
--- Keep the original globals as SavedVariables for migration and debug export.
+-- HolyShiftDB is a read-only legacy import; active settings belong to this character.
 HolyShiftOptions = {
     { key = "innervate", variable = "HSInnervateUse", label = "Auto Innervate" },
     { key = "mcp", variable = "HSMCPUse", label = "Auto Manual Crowd Pummeler" },
@@ -32,26 +32,41 @@ local function NormalizeEquipment(value)
 end
 
 function HolyShiftInitializeSettings()
-    if type(HolyShiftDB) ~= "table" then HolyShiftDB = {} end
+    if type(HolyShiftCharacterDB) ~= "table" then
+        HolyShiftCharacterDB = {}
+        -- Import the former account-wide settings once per character, by value.
+        -- Never alias the legacy table: another character must not see our edits.
+        if type(HolyShiftDB) == "table" then
+            for key, value in pairs(HolyShiftDB) do
+                if type(value) ~= "table" then HolyShiftCharacterDB[key] = value end
+            end
+            for _, key in ipairs({ "position", "logposition" }) do
+                if type(HolyShiftDB[key]) == "table" then
+                    HolyShiftCharacterDB[key] = {}
+                    for k, v in pairs(HolyShiftDB[key]) do HolyShiftCharacterDB[key][k] = v end
+                end
+            end
+        end
+    end
     for _, entry in ipairs(HolyShiftOptions) do
-        local value = HolyShiftDB[entry.key]
+        local value = HolyShiftCharacterDB[entry.key]
         if value == nil then value = getglobal(entry.variable) end
         value = NormalizeToggle(value) -- upstream defaults: all optional automation off
-        HolyShiftDB[entry.key] = value
+        HolyShiftCharacterDB[entry.key] = value
         setglobal(entry.variable, value)
     end
     for _, key in ipairs({ "weapon", "offhand" }) do
-        local value = HolyShiftDB[key]
+        local value = HolyShiftCharacterDB[key]
         if value == nil then
             if key == "weapon" then value = HSWeapon else value = HSOffhand end
         end
         value = NormalizeEquipment(value)
-        HolyShiftDB[key] = value
+        HolyShiftCharacterDB[key] = value
         if key == "weapon" then HSWeapon = value else HSOffhand = value end
     end
     if type(HSDebugLog) ~= "table" then HSDebugLog = {} end
     while table.getn(HSDebugLog) > 500 do table.remove(HSDebugLog, 1) end
-    HolyShiftDB.schemaVersion = 1
+    HolyShiftCharacterDB.schemaVersion = 1
     HolyShiftSettingsReady = true
 end
 
@@ -59,7 +74,7 @@ function HolyShiftSetOption(key, value)
     local entry = HolyShiftOptionByKey[key]
     if not entry or not HolyShiftSettingsReady then return false end
     value = NormalizeToggle(value)
-    HolyShiftDB[key] = value
+    HolyShiftCharacterDB[key] = value
     setglobal(entry.variable, value)
     if HolyShiftRefreshUI then HolyShiftRefreshUI() end
     return true
@@ -68,7 +83,7 @@ end
 function HolyShiftSetEquipment(key, value)
     if not HolyShiftSettingsReady or (key ~= "weapon" and key ~= "offhand") then return false end
     value = NormalizeEquipment(value)
-    HolyShiftDB[key] = value
+    HolyShiftCharacterDB[key] = value
     if key == "weapon" then HSWeapon = value else HSOffhand = value end
     if HolyShiftRefreshUI then HolyShiftRefreshUI() end
     return true

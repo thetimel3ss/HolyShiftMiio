@@ -37,7 +37,7 @@ HolyShiftUIFrame:SetScript("OnDragStop", function()
     -- Save current position to database
     local point, _, relPoint, x, y = this:GetPoint()
     if not HolyShiftSettingsReady then return end
-    HolyShiftDB.position = { point = point, relPoint = relPoint, x = x, y = y }
+    HolyShiftCharacterDB.position = { point = point, relPoint = relPoint, x = x, y = y }
 end)
 
 -- MainFrame close button
@@ -81,7 +81,7 @@ HolyShiftLogFrame:SetScript("OnDragStop", function()
     this:StopMovingOrSizing()
     local point, _, relPoint, x, y = this:GetPoint()
     if not HolyShiftSettingsReady then return end
-    HolyShiftDB.logposition = { point = point, relPoint = relPoint, x = x, y = y }
+    HolyShiftCharacterDB.logposition = { point = point, relPoint = relPoint, x = x, y = y }
 end)
 
 -- LogFrame close button
@@ -122,7 +122,7 @@ local function CreateEquipmentField(key, label, y)
     local title = HolyShiftUIFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     title:SetPoint("TOPLEFT", HolyShiftUIFrame, "TOPLEFT", 25, y)
     title:SetText(label)
-    local field = CreateFrame("EditBox", nil, HolyShiftUIFrame, "InputBoxTemplate")
+    local field = CreateFrame("EditBox", "HolyShiftEquipment_"..key, HolyShiftUIFrame, "InputBoxTemplate")
     field:SetWidth(205)
     field:SetHeight(22)
     field:SetPoint("TOPLEFT", HolyShiftUIFrame, "TOPLEFT", 110, y + 5)
@@ -134,7 +134,7 @@ local function CreateEquipmentField(key, label, y)
     end)
     field:SetScript("OnEscapePressed", function()
         this:ClearFocus()
-        this:SetText(HolyShiftDB[key])
+        this:SetText(HolyShiftCharacterDB[key])
     end)
     equipmentFields[key] = field
 end
@@ -159,9 +159,9 @@ hint:SetText("Equipment: enter an item name, or None to disable.")
 
 function HolyShiftRefreshUI()
     if not HolyShiftSettingsReady then return end
-    for key, cb in pairs(checkboxes) do cb:SetChecked(HolyShiftDB[key] == 1) end
+    for key, cb in pairs(checkboxes) do cb:SetChecked(HolyShiftCharacterDB[key] == 1) end
     for key, field in pairs(equipmentFields) do
-        if not field:HasFocus() then field:SetText(HolyShiftDB[key]) end
+        if not field:HasFocus() then field:SetText(HolyShiftCharacterDB[key]) end
     end
 end
 HolyShiftUIFrame:SetScript("OnShow", HolyShiftRefreshUI)
@@ -226,7 +226,7 @@ logButton:SetScript("OnClick", HolyShiftToggleLog)
 function HolyShiftRestoreUI()
     for _, entry in ipairs({ { HolyShiftUIFrame, "position" }, { HolyShiftLogFrame, "logposition" } }) do
         local frame, key = entry[1], entry[2]
-        local p = HolyShiftDB[key]
+        local p = HolyShiftCharacterDB[key]
         local anchors = { TOP = true, BOTTOM = true, LEFT = true, RIGHT = true, CENTER = true,
             TOPLEFT = true, TOPRIGHT = true, BOTTOMLEFT = true, BOTTOMRIGHT = true }
         if type(p) == "table" and anchors[p.point] and anchors[p.relPoint]
