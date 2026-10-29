@@ -2,8 +2,30 @@
 
 HolyShift is a Turtle WoW feral druid addon focused on one-button cat DPS with optional raid automation and debug tooling.
 
-Maintainer: **Miioon**
+This fork: **Timeless** — [thetimel3ss/HolyShiftMiio](https://github.com/thetimel3ss/HolyShiftMiio)
+
+Upstream maintainer credit: **Miioon**
 Original author: **Maulbatross (Kronos 3)**
+
+## Configuration interface
+
+The configuration and log windows are adapted from Timeless's private
+`holyshift-enhanced` UI. Open settings with `/holyshift`, `/hs`, `/hsdps ui`,
+or `/hsdps config`. The combat macro remains `/hsdps dps`.
+
+Checkboxes and the original commands share the same settings. Existing
+`HolyShiftDB` values take precedence; otherwise the old standalone variables are
+migrated. Fresh installations keep upstream defaults: all optional toggles off.
+The original SavedVariables remain declared for migration and debug export.
+
+Weapon/offhand fields accept an item name or `None`; press Enter or Save equipment.
+Use View log or `/hsdps debug ui` for the debug window. Both windows remember
+their positions. `clawadds` is preserved for compatibility but its checkbox is
+disabled: it has no effect in the upstream rotation.
+
+This phase preserves qrospars master's rotation. Future rotation work and in-game
+acceptance steps are in [ROADMAP.md](ROADMAP.md). Provenance and related branches
+are in [docs/AUTHORS.md](docs/AUTHORS.md).
 
 ## What It Does
 
@@ -113,26 +135,24 @@ Examples:
 - `/run QuickHT()`
 - `/run QuickCast('Healing Touch(Rank 5)',1)`
 
-## Debug Export to File
+## Debug persistence and validation
 
-HolyShift stores debug lines in SavedVariables. They are written on `/reload` or logout.
+Enable `/hsdps debug on`, perform a test, then `/reload` or log out to save.
+`HSDebugLog` remains a SavedVariable. The in-game viewer is accessible with
+`/hsdps debug ui`; `/hsdps debug show 50` prints the last 50 entries to chat.
+No export or auto-sync scripts are bundled with this repository.
 
-To export them to a text file from this repo:
-- Run `./debug-log-export.ps1`
-- Output file: `logs/HolyShift-debug.txt`
+Run the regression checks from this directory using a Lua 5.0 interpreter:
 
-Typical workflow:
-1. `/hsdps debug on`
-2. Fight/test
-3. `/reload`
-4. Run export script
+```sh
+lua tests/base.lua
+luac -p HolyShift_Settings.lua HolyShiftCore.lua HolyShift_UI.lua Localization.lua
+```
 
-## Dev Auto-Sync (Optional)
+The tests use mocked frame/unit APIs to verify loading, migration, synchronized
+controls and commands, equipment saving, positions and persistent debug. They do
+not validate rendering, server spell behavior, or DPS; those require the game.
 
-If you develop directly from this repo and want automatic sync into Turtle WoW AddOns:
-- Run `./dev-autosync.ps1`
-- Then `/reload` in game after changes
-
-## Repository
+## Upstream
 
 https://github.com/qrospars/HolyShiftMiio

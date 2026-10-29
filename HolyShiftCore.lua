@@ -83,11 +83,12 @@ local function HSHandleSelfCombatMessage(msg)
 	end
 end
 function HolyShift_OnLoad()
-    if UnitClass("player") == "Druid" then
+    this:RegisterEvent("VARIABLES_LOADED")
+    local _, class = UnitClass("player")
+    if class == "DRUID" then
         this:RegisterEvent("PLAYER_ENTERING_WORLD")
         this:RegisterEvent("PLAYER_REGEN_ENABLED")
 		this:RegisterEvent("PLAYER_REGEN_DISABLED")
-        this:RegisterEvent("VARIABLES_LOADED")
         this:RegisterEvent("CHAT_MSG_COMBAT_SELF_MISSES")
         this:RegisterEvent("CHAT_MSG_SPELL_SELF_DAMAGE")
         this:RegisterEvent("CHAT_MSG_SPELL_SELF_BUFF")
@@ -102,206 +103,53 @@ function HolyShift_OnLoad()
 	SLASH_HOLYSHIFT1 = "/hsdps";
 end
 function HolyShift_SlashCommand(msg)
-
-	local _,_, HScommand,HSoption = string.find(msg, "([%w%p]+)%s*(.*)$")
-	--HSPrint(HScommand)
-	if HScommand == "dps" then
-		HolyShiftAddon()
-	elseif HScommand == "innervate" then 
-		if HSoption == "on" then
-			HSInnervateUse = 1
-			HSPrint('|cffd08524HolyShift |cffffffffAuto Innervate |cffecd226Enabled. |cffd08524HSInnervateUse = |cffffffff'..HSInnervateUse)
-		elseif HSoption == "off" then
-			HSInnervateUse = 0
-			HSPrint('|cffd08524HolyShift |cffffffffAuto Innervate |cffecd226Disabled. |cffd08524HSInnervateUse = |cffffffff'..HSInnervateUse)
-		end
-	elseif HScommand == "mcp" then 
-		if HSoption == "on" then
-			HSMCPUse = 1
-			HSPrint('|cffd08524HolyShift |cffffffffAuto Manual Crowd Pummeler |cffecd226Enabled. |cffd08524HSMCPUse = |cffffffff'..HSMCPUse)
-		elseif HSoption == "off" then
-			HSMCPUse = 0
-			HSPrint('|cffd08524HolyShift |cffffffffAuto Manual Crowd Pummeler |cffecd226Disabled. |cffd08524HSMCPUse = |cffffffff'..HSMCPUse)
-		end
-	elseif HScommand == "manapot" then 
-		if HSoption == "on" then
-			HSMPUse = 1
-			HSPrint('|cffd08524HolyShift |cffffffffAuto use Mana Potion |cffecd226Enabled. |cffd08524HSMPUse = |cffffffff'..HSMPUse)
-		elseif HSoption == "off" then
-			HSMPUse = 0
-			HSPrint('|cffd08524HolyShift |cffffffffAuto use Mana Potion |cffecd226Disabled. |cffd08524HSMPUse = |cffffffff'..HSMPUse)
-		end
-	elseif HScommand == "demonicrune" then 
-		if HSoption == "on" then
-			HSDRUse = 1
-			HSPrint('|cffd08524HolyShift |cffffffffAuto use Demonic Rune |cffecd226Enabled. |cffd08524HSDRUse = |cffffffff'..HSDRUse)
-		elseif HSoption == "off" then
-			HSDRUse = 0
-			HSPrint('|cffd08524HolyShift |cffffffffAuto use Demonic Rune |cffecd226Disabled. |cffd08524HSDRUse = |cffffffff'..HSDRUse)
-		end
-	elseif HScommand == "flurry" then 
-		if HSoption == "on" then
-			HSFLUse = 1
-			HSPrint('|cffd08524HolyShift |cffffffffAuto Juju Flurry |cffecd226Enabled. |cffd08524HSFLUse = |cffffffff'..HSFLUse)
-		elseif HSoption == "off" then
-			HSFLUse = 0
-			HSPrint('|cffd08524HolyShift |cffffffffAuto Juju Flurry |cffecd226Disabled. |cffd08524HSFLUse = |cffffffff'..HSFLUse)
-		end
-	elseif HScommand == "clawadds" then 
-		if HSoption == "on" then
-			HSClawAdd = 1
-			HSPrint('|cffd08524HolyShift |cffffffffClaw Non-Bosses |cffecd226Enabled. |cffd08524HSClawAdd = |cffffffff'..HSClawAdd)
-		elseif HSoption == "off" then
-			HSClawAdd = 0
-			HSPrint('|cffd08524HolyShift |cffffffffClaw Non-Bosses |cffecd226Disabled. |cffd08524HSClawAdd = |cffffffff'..HSClawAdd)
-		end
-	elseif HScommand == "tiger" then 
-		if HSoption == "on" then
-			HSTigerUse = 1
-			HSPrint("|cffd08524HolyShift |cffffffffAuto Tiger's Fury |cffecd226Enabled. |cffd08524HSTigerUse = |cffffffff"..HSTigerUse)
-		elseif HSoption == "off" then
-			HSTigerUse = 0
-			HSPrint("|cffd08524HolyShift |cffffffffAuto Tiger's Fury |cffecd226Disabled. |cffd08524HSTigerUse = |cffffffff"..HSTigerUse)
-		end
-	elseif HScommand == "shift" then 
-		if HSoption == "on" then
-			HSShiftUse = 1
-			HSPrint('|cffd08524HolyShift |cffffffffAuto Powershift |cffecd226Enabled. |cffd08524HSShiftUse = |cffffffff'..HSShiftUse)
-		elseif HSoption == "off" then
-			HSShiftUse = 0
-			HSPrint('|cffd08524HolyShift |cffffffffAuto Powershift |cffecd226Disabled. |cffd08524HSShiftUse = |cffffffff'..HSShiftUse)
-		end
-	elseif HScommand == "cower" then 
-		if HSoption == "on" then
-			HSCowerUse = 1
-			HSPrint('|cffd08524HolyShift |cffffffffAuto Cower |cffecd226Enabled. |cffd08524HSCowerUse = |cffffffff'..HSCowerUse)
-		elseif HSoption == "off" then
-			HSCowerUse = 0
-			HSPrint('|cffd08524HolyShift |cffffffffAuto Cower |cffecd226Disabled. |cffd08524HSCowerUse = |cffffffff'..HSCowerUse)
-		end
-	elseif HScommand == "deathrate" then 
-		if HSoption == "on" then
-			HSDeathrate = 1
-			HSPrint('|cffd08524HolyShift |cffffffffDeathrate Report |cffecd226Enabled. |cffd08524HSDeathrate = |cffffffff'..HSDeathrate)
-		elseif HSoption == "off" then
-			HSDeathrate = 0
-			HSPrint('|cffd08524HolyShift |cffffffffDeathrate Report |cffecd226Disabled. |cffd08524HSDeathrate = |cffffffff'..HSDeathrate)
-		end
-	elseif HScommand == "ff" then 
-		if HSoption == "on" then
-			HSAutoFF = 1
-			HSPrint('|cffd08524HolyShift |cffffffffAuto Faerie Fire |cffecd226Enabled. |cffd08524HSAutoFF = |cffffffff'..HSAutoFF)
-		elseif HSoption == "off" then
-			HSAutoFF = 0
-			HSPrint('|cffd08524HolyShift |cffffffffAuto Faerie Fire |cffecd226Disabled. |cffd08524HSAutoFF = |cffffffff'..HSAutoFF)
-		end
-	elseif HScommand == "debug" then
-		local _,_, dbgSub, dbgArg = string.find(HSoption or "", "([%w%p]+)%s*(.*)$")
-		if HSoption == "on" then
-			HSDebugEnabled = 1
-			HSPrint('|cffd08524HolyShift |cffffffffDebug logging |cff24D040Enabled')
-		elseif HSoption == "off" then
-			HSDebugEnabled = 0
-			HSPrint('|cffd08524HolyShift |cffffffffDebug logging |cffD02424Disabled')
-		elseif HSoption == "clear" then
-			HSDebugLog = {}
-			HSPrint('|cffd08524HolyShift |cffffffffDebug log cleared')
-		elseif dbgSub == "show" then
-			HSDebugDump(dbgArg)
-		elseif HSoption == "status" or HSoption == "" then
-			if HSDebugEnabled == 1 then
-				HSPrint('|cffd08524HolyShift |cffffffffDebug logging: |cff24D040ON')
-			else
-				HSPrint('|cffd08524HolyShift |cffffffffDebug logging: |cffD02424OFF')
-			end
-			if HSDebugLog == nil then
-				HSDebugLog = {}
-			end
-			HSPrint('|cffd08524HolyShift |cffffffffDebug lines stored: |cffecd226'..table.getn(HSDebugLog))
-			HSPrint('|cffd08524HolyShift |cffffffffUsage: |cffecd226/hsdps debug on|off|show 50|clear')
-		else
-			HSPrint('|cffd08524HolyShift |cffffffffDebug usage: |cffecd226/hsdps debug on|off|show 50|clear')
-		end
-	elseif HScommand == "weapon" then 
-		HSWeapon = HSoption
-		HSPrint('|cffd08524HolyShift HSWeapon = |cffecd226'..HSWeapon)
-	elseif HScommand == "offhand" then 
-		HSOffhand = HSoption
-		HSPrint('|cffd08524HolyShift HSOffhand = |cffecd226'..HSOffhand)
-	elseif HScommand == nil or HScommand == "" then
-		--HSPrint(HScommand)
-		HSPrint("---------------------")
-		HSPrint('|cffd08524HolyShift: |cffffffffMake a macro that just says |cffecd226/hsdps dps |cffffffffand put on the same key in human and cat form.')
-		if HSInnervateUse == 1 then
-			HSPrint('|cffd08524HolyShift: |cffffffffInnervate |cff24D040Enabled|cffd08524.|cffecd226 /hsdps innervate on |cffd08524or|cffecd226 /hsdps innervate off |cffd08524to change')
-		else
-			HSPrint('|cffd08524HolyShift: |cffffffffInnervate |cffD02424Disabled|cffd08524.|cffecd226 /hsdps innervate on |cffd08524or|cffecd226 /hsdps innervate off |cffd08524to change')
-		end
-		if HSMCPUse == 1 then
-			HSPrint('|cffd08524HolyShift: |cffffffffManual Crowd Pummeler |cff24D040Enabled|cffd08524.|cffecd226 /hsdps mcp on |cffd08524or|cffecd226 /hsdps mcp off |cffd08524to change')
-		else
-			HSPrint('|cffd08524HolyShift: |cffffffffManual Crowd Pummeler |cffD02424Disabled|cffd08524.|cffecd226 /hsdps mcp on |cffd08524or|cffecd226 /hsdps mcp off |cffd08524to change')
-		end
-		if HSMPUse == 1 then
-			HSPrint('|cffd08524HolyShift: |cffffffffMana pot use |cff24D040Enabled|cffd08524.|cffecd226 /hsdps manapot on |cffd08524or|cffecd226 /hsdps manapot off |cffd08524to change')
-		else
-			HSPrint('|cffd08524HolyShift: |cffffffffMana pot use |cffD02424Disabled|cffd08524.|cffecd226 /hsdps manapot on |cffd08524or|cffecd226 /hsdps manapot off |cffd08524to change')
-		end
-		if HSDRUse == 1 then
-			HSPrint('|cffd08524HolyShift: |cffffffffDemonic rune use |cff24D040Enabled|cffd08524.|cffecd226 /hsdps demonicrune on |cffd08524or|cffecd226 /hsdps demonicrune off |cffd08524to change')
-		else
-			HSPrint('|cffd08524HolyShift: |cffffffffDemonic rune use |cffD02424Disabled|cffd08524.|cffecd226 /hsdps demonicrune on |cffd08524or|cffecd226 /hsdps demonicrune off |cffd08524to change')
-		end
-		if HSFLUse == 1 then
-			HSPrint('|cffd08524HolyShift: |cffffffffJuju flurry use |cff24D040Enabled|cffd08524.|cffecd226 /hsdps flurry on |cffd08524or|cffecd226 /hsdps flurry off to change')
-		else
-			HSPrint('|cffd08524HolyShift: |cffffffffJuju flurry use |cffD02424Disabled|cffd08524.|cffecd226 /hsdps flurry on |cffd08524or|cffecd226 /hsdps flurry off to change')
-		end
-		if HSClawAdd == 1 then
-			HSPrint('|cffd08524HolyShift: |cffffffffClaw non-bosses |cff24D040Enabled|cffd08524.|cffecd226 /hsdps clawadds on |cffd08524or|cffecd226 /hsdps clawadds off |cffd08524to change')
-		else
-			HSPrint('|cffd08524HolyShift: |cffffffffClaw non-bosses |cffD02424Disabled|cffd08524.|cffecd226 /hsdps clawadds on |cffd08524or|cffecd226 /hsdps clawadds off |cffd08524to change')
-		end
-		if HSTigerUse == 1 then
-			HSPrint("|cffd08524HolyShift: |cffffffffTiger's Fury |cff24D040Enabled|cffd08524.|cffecd226 /hsdps tiger on |cffd08524or|cffecd226 /hsdps tiger off |cffd08524to change")
-		else
-			HSPrint("|cffd08524HolyShift: |cffffffffTiger's Fury |cffD02424Disabled|cffd08524.|cffecd226 /hsdps tiger on |cffd08524or|cffecd226 /hsdps tiger off |cffd08524to change")
-		end
-		if HSShiftUse == 1 then
-			HSPrint('|cffd08524HolyShift: |cffffffffPowershift |cff24D040Enabled|cffd08524.|cffecd226 /hsdps shift on |cffd08524or|cffecd226 /hsdps shift off |cffd08524to change')
-		else
-			HSPrint('|cffd08524HolyShift: |cffffffffPowershift |cffD02424Disabled|cffd08524.|cffecd226 /hsdps shift on |cffd08524or|cffecd226 /hsdps shift off |cffd08524to change')
-		end
-		if HSCowerUse == 1 then
-			HSPrint('|cffd08524HolyShift: |cffffffffAuto Cower |cff24D040Enabled|cffd08524.|cffecd226 /hsdps cower on |cffd08524or|cffecd226 /hsdps cower off |cffd08524to change')
-		else
-			HSPrint('|cffd08524HolyShift: |cffffffffAuto Cower |cffD02424Disabled|cffd08524.|cffecd226 /hsdps cower on |cffd08524or|cffecd226 /hsdps cower off |cffd08524to change')
-		end
-		if HSDeathrate == 1 then
-			HSPrint('|cffd08524HolyShift: |cffffffffDeathrate report |cff24D040Enabled|cffd08524.|cffecd226 /hsdps deathrate on |cffd08524or|cffecd226 /hsdps deathrate off |cffd08524to change')
-		else
-			HSPrint('|cffd08524HolyShift: |cffffffffDeathrate report |cffD02424Disabled|cffd08524.|cffecd226 /hsdps deathrate on |cffd08524or|cffecd226 /hsdps deathrate off |cffd08524to change')
-		end
-		if HSAutoFF == 1 then
-			HSPrint('|cffd08524HolyShift: |cffffffffAuto Faerie Fire |cff24D040Enabled|cffd08524.|cffecd226 /hsdps ff on |cffd08524or|cffecd226 /hsdps ff off |cffd08524to change')
-		else
-			HSPrint('|cffd08524HolyShift: |cffffffffAuto Faerie Fire |cffD02424Disabled|cffd08524.|cffecd226 /hsdps ff on |cffd08524or|cffecd226 /hsdps ff off |cffd08524to change')
-		end
-		if HSWeapon == nil then
-			HSPrint('|cffd08524HolyShift: |cffffffffWEAPON SWAP: |cffecd226No weapon assigned for HSWeapon|cffd08524.|cffecd226 /hsdps weapon Weapon Name |cffd08524to change or|cffecd226 /hsdps weapon none |cffd08524to disable')
-		elseif HSWeapon == 'none' or HSWeapon == 'None' then
-			HSPrint('|cffd08524HolyShift: |cffffffffWEAPON SWAP: HSWeapon = |cffD02424'..HSWeapon..'|cffd08524.|cffecd226 /hsdps weapon Weapon Name |cffd08524to change or|cffecd226 /hsdps weapon none |cffd08524to disable')
-		else
-			HSPrint('|cffd08524HolyShift: |cffffffffWEAPON SWAP: HSWeapon = |cff24D040'..HSWeapon..'|cffd08524.|cffecd226 /hsdps weapon Weapon Name |cffd08524to change or|cffecd226 /hsdps weapon none |cffd08524to disable')
-		end
-		if HSOffhand == nil then
-			HSPrint('|cffd08524HolyShift: |cffffffffOFFHAND SWAP: |cffecd226No offhand assigned for HSOffhand|cffd08524.|cffecd226 /hsdps offhand Offhand Name |cffd08524to change or|cffecd226 /hsdps offhand none |cffd08524to disable')
-		elseif HSOffhand == 'none' or HSOffhand == 'None' then
-			HSPrint('|cffd08524HolyShift: |cffffffffOFFHAND SWAP: HSOffhand = |cffD02424'..HSOffhand..'|cffd08524.|cffecd226 /hsdps offhand Offhand Name |cffd08524to change or|cffecd226 /hsdps offhand none |cffd08524to disable')
-		else
-			HSPrint('|cffd08524HolyShift: |cffffffffOFFHAND SWAP: HSOffhand = |cff24D040'..HSOffhand..'|cffd08524.|cffecd226 /hsdps offhand Offhand Name |cffd08524to change or|cffecd226 /hsdps offhand none |cffd08524to disable')
-		end
-	end
+    local _, _, command, option = string.find(msg or "", "^%s*([^%s]+)%s*(.-)%s*$")
+    command = string.lower(command or "")
+    option = option or ""
+    -- Keep the combat macro independent of configuration work.
+    if command == "dps" then
+        HolyShiftAddon()
+        return
+    end
+    if not HolyShiftSettingsReady then
+        HSPrint("HolyShift: settings are not loaded yet.")
+        return
+    end
+    if command == "ui" or command == "config" then
+        HolyShiftToggleUI()
+    elseif command == "weapon" or command == "offhand" then
+        HolyShiftSetEquipment(command, option)
+        HSPrint("HolyShift: "..command.." = "..HolyShiftDB[command])
+    elseif command == "debug" then
+        local _, _, sub, value = string.find(option, "^([^%s]+)%s*(.*)$")
+        sub = string.lower(sub or "status")
+        if sub == "on" or sub == "off" then
+            HolyShiftSetOption("debug", sub == "on")
+        elseif sub == "clear" then
+            HolyShiftClearLog()
+        elseif sub == "show" then
+            HSDebugDump(value)
+        elseif sub == "ui" then
+            HolyShiftToggleLog()
+        else
+            HSPrint("HolyShift: debug="..HSDebugEnabled..", lines="..table.getn(HSDebugLog))
+            HSPrint("/hsdps debug on|off|show 50|clear|ui")
+        end
+    elseif HolyShiftOptionByKey[command] then
+        if option == "on" or option == "off" then
+            HolyShiftSetOption(command, option == "on")
+            HSPrint("HolyShift: "..command.." = "..HolyShiftDB[command])
+        else
+            HSPrint("HolyShift: /hsdps "..command.." on|off")
+        end
+    else
+        HSPrint("HolyShift: /hsdps dps for combat; /holyshift or /hsdps ui for settings.")
+        HSPrint("/hsdps weapon <name|none>; /hsdps offhand <name|none>; /hsdps debug on|off|show 50|clear|ui")
+        for _, entry in ipairs(HolyShiftOptions) do
+            local suffix = entry.legacy and " (legacy: no effect in upstream rotation)" or ""
+            HSPrint(entry.key.." = "..HolyShiftDB[entry.key]..suffix)
+        end
+    end
 end
 function HolyShift_OnEvent(event)
 	if event == "PLAYER_ENTERING_WORLD" then
@@ -406,6 +254,8 @@ function HolyShift_OnEvent(event)
 	end
 	
 	if event == "VARIABLES_LOADED" then
+        HolyShiftInitializeSettings()
+        if HolyShiftRestoreUI then HolyShiftRestoreUI() end
 		HSPrint('|cffd08524HolyShift by Miioon |cffffffff(Original by Maulbatross) |cffd08524Loaded')
 		HSPrint('|cffd08524HolyShift: |cffffffffType |cffecd226/hsdps |cffffffffto show options')
 		if HSInnervateUse == 1 then
@@ -478,83 +328,13 @@ function HolyShift_OnEvent(event)
 			HSPrint('|cffd08524HolyShift: |cffffffffOFFHAND SWAP: HSOffhand = |cff24D040'..HSOffhand)
 		end
 		
-		if UnitClass("player") == "Druid" then
-			hsSpellKnownCache = {}
-			hsSpellIndexCache = {}
-			hsReshiftChecked = false
-			hsHasReshift = false
-            if HSInnervateUse == nil then
-                HSInnervateUse = 0
-            else
-                tonumber(HSInnervateUse)
-            end
-            if HSMCPUse == nil then
-                HSMCPUse = 0
-            else
-                tonumber(HSMCPUse)
-            end
-            if HSMPUse == nil then
-                HSMPUse = 0
-            else
-                tonumber(HSMPUse)
-            end
-            if HSDRUse == nil then
-                HSDRUse = 0
-            else
-                tonumber(HSDRUse)
-            end
-            if HSFLUse == nil then
-                HSFLUse = 0
-            else
-                tonumber(HSFLUse)
-            end
-			if HSClawAdd == nil then
-                HSClawAdd = 0
-            else
-                tonumber(HSClawAdd)
-            end
-			if HSTigerUse == nil then
-                HSTigerUse = 0
-            else
-                tonumber(HSTigerUse)
-            end
-			if HSShiftUse == nil then
-                HSShiftUse = 0
-            else
-                tonumber(HSShiftUse)
-            end
-			if HSCowerUse == nil then
-                HSCowerUse = 0
-            else
-                tonumber(HSCowerUse)
-            end
-			if HSWeapon == nil then
-                HSWeapon = 'None'
-            end
-			if HSOffhand == nil then
-                HSOffhand = 'None'
-            end
-			if HSDeathrate == nil then
-                HSDeathrate = 0
-            else
-                tonumber(HSDeathrate)
-            end
-			if HSAutoFF == nil then
-                HSAutoFF = 0
-            else
-                tonumber(HSAutoFF)
-            end
-			if HSDebugEnabled == nil then
-				HSDebugEnabled = 0
-			else
-				tonumber(HSDebugEnabled)
-			end
-			if HSDebugLog == nil then
-				HSDebugLog = {}
-			end
-		end
-	end
+        hsSpellKnownCache = {}
+        hsSpellIndexCache = {}
+        hsReshiftChecked = false
+        hsHasReshift = false
+    end
 end
+
 function HSPrint(msg)
     if (not DEFAULT_CHAT_FRAME) then
         return
@@ -605,6 +385,7 @@ function HSDebugTrace(tag, detail)
 		line = line.." | "..detail
 	end
 	table.insert(HSDebugLog, line)
+    if HolyShiftAppendLog then HolyShiftAppendLog(line) end
 	while table.getn(HSDebugLog) > HS_DEBUG_LOG_MAX do
 		table.remove(HSDebugLog, 1)
 	end
